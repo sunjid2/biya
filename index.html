@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>Biya</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f7f7f7;
+            font-family: Arial, sans-serif;
+        }
+        #game {
+            position: relative;
+            width: 800px;
+            height: 300px;
+            margin: 50px auto;
+            background-color: white;
+            overflow: hidden;
+            border: 2px solid #333;
+            border-radius: 10px;
+        }
+        #character {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            bottom: 0;
+            left: 50px;
+        }
+        .obstacle {
+            position: absolute;
+            width: 40px;
+            height: 60px;
+            bottom: 0;
+            background-color: transparent;
+        }
+        .obstacle img {
+            width: 100%;
+            height: 100%;
+        }
+        #gameOver {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            text-align: center;
+        }
+        #gameOver img {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #startButton {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            font-size: 22px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        #startButton:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <img id="character" src="https://i.postimg.cc/pdKyQbwf/20250426-112328.png" alt="Character">
+        <div id="gameOver">
+            <img src="https://i.postimg.cc/HkLn9xd9/20250426-165738.png" alt="Game Over">
+            <button id="startButton">Restart</button>
+        </div>
+        <div id="score">0</div>
+        <button id="startButtonMain">Start Game</button>
+    </div>
+
+    <script>
+        let isJumping = false;
+        let isGameOver = false;
+        let score = 0;
+        let obstacleTimer;
+
+        const character = document.getElementById("character");
+        const game = document.getElementById("game");
+        const gameOver = document.getElementById("gameOver");
+        const scoreDisplay = document.getElementById("score");
+        const startButton = document.getElementById("startButton");
+        const startButtonMain = document.getElementById("startButtonMain");
+
+        function jump() {
+            if (isJumping) return;
+            isJumping = true;
+            let position = 0;
+            let upInterval = setInterval(() => {
+                if (position >= 150) {
+                    clearInterval(upInterval);
+                    let downInterval = setInterval(() => {
+                        if (position <= 0) {
+                            clearInterval(downInterval);
+                            isJumping = false;
+                        }
+                        position -= 5;
+                        character.style.bottom = position + "px";
+                    }, 20);
+                } else {
+                    position += 5;
+                    character.style.bottom = position + "px";
+                }
+            }, 20);
+        }
+
+        function generateObstacle() {
+            if (isGameOver) return;
+
+            const obstacle = document.createElement("div");
+            obstacle.classList.add("obstacle");
+
+            const obstacleImage = document.createElement("img");
+            obstacleImage.src = "https://i.postimg.cc/65G0sTnt/20250426-111157.png"; // নিজের অবজেক্ট ইমেজ দিন
+            obstacle.appendChild(obstacleImage);
+
+            obstacle.style.left = "800px";
+            game.appendChild(obstacle);
+
+            let obstaclePosition = 800;
+            let obstacleInterval = setInterval(() => {
+                if (isGameOver) {
+                    clearInterval(obstacleInterval);
+                    if (obstacle.parentNode) {
+                        obstacle.remove();
+                    }
+                    return;
+                }
+
+                if (obstaclePosition < -40) {
+                    clearInterval(obstacleInterval);
+                    if (obstacle.parentNode) {
+                        obstacle.remove();
+                    }
+                    score++;
+                    scoreDisplay.textContent = score;
+                }
+
+                let characterBottom = parseInt(window.getComputedStyle(character).bottom.replace("px", ""));
+                if (
+                    obstaclePosition > 50 && obstaclePosition < 110 &&
+                    characterBottom < 60
+                ) {
+                    clearInterval(obstacleInterval);
+                    endGame();
+                }
+
+                obstaclePosition -= 5;
+                obstacle.style.left = obstaclePosition + "px";
+            }, 20);
+
+            if (!isGameOver) {
+                obstacleTimer = setTimeout(generateObstacle, Math.random() * 2000 + 1000);
+            }
+        }
+
+        function startGame() {
+            isGameOver = false;
+            score = 0;
+            scoreDisplay.textContent = score;
+            gameOver.style.display = "none";
+            startButtonMain.style.display = "none";
+            character.style.bottom = "0px";
+
+            document.querySelectorAll(".obstacle").forEach(ob => {
+                ob.remove();
+            });
+
+            generateObstacle();
+        }
+
+        function endGame() {
+            isGameOver = true;
+            clearTimeout(obstacleTimer);
+            gameOver.style.display = "block";
+        }
+
+        function controlByKeyboard(e) {
+            if (e.keyCode === 32 || e.keyCode === 38) {
+                if (!isGameOver) jump();
+            }
+        }
+
+        function controlByClick() {
+            if (!isGameOver) jump();
+        }
+
+        document.addEventListener("keydown", controlByKeyboard);
+        document.addEventListener("click", controlByClick);
+        document.addEventListener("touchstart", controlByClick);
+
+        startButton.addEventListener("click", startGame);
+        startButtonMain.addEventListener("click", startGame);
+
+    </script>
+</body>
+</html>
